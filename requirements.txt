@@ -1,0 +1,6 @@
+langchain
+pypdf2
+qdrant-client
+openai
+flask
+PyYAML

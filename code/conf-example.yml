@@ -1,0 +1,14 @@
+openai_azure:
+  api_version: 
+  azure_endpoint: 
+  api_key: 
+  model_engine: 
+  embedding_engine: 
+
+filepaths:
+  pdfs_folder: 
+
+qdrant:
+  host:
+  port:
+  collection_name:
