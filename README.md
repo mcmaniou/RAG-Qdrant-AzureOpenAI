@@ -29,5 +29,7 @@ As previously, **the necessary parametrization can be provided using a `conf.yml
 
 The app runs in `localhost:5000`. And the UI looks like the following image. You can start interacting with the virtual assistant! The history is also printed in the screen.
 
+![User Interface](https://github.com/mcmaniou/RAG-Qdrant-AzureOpenAI/blob/main/images/my_virtual_assistant.png)
+
 ## License
 This project is licensed under the MIT License - see the `LICENSE` file for details.
