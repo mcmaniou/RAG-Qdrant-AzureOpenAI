@@ -31,62 +31,72 @@ def read_args(conf_file):
 # 2. It searches the database and retrieves relevant content.
 # 3. It queries the OpenAI model given the question and the relevant content.
 # 4. It returns the response.
-def answer_question(question):
-
+def answer_question(question) -> str:
     # read arguments
     conf_file = Path(MYDIR, "conf.yml")
     args = read_args(conf_file)
 
     # set up qdrant client and collection
-    qdrant = QdrantClient(host=args.qdrant["host"], port=args.qdrant["port"])
-    collection_name = args.qdrant["collection_name"]
+    try:
+        qdrant = QdrantClient(host=args.qdrant["host"], port=args.qdrant["port"])
+        collection_name = args.qdrant["collection_name"]
+    except Exception as e:
+        print(f"The following error occurred while connecting to the DB:"
+              f" {e}")
+        return "No DB available to retrieve information from."
 
-    # set up azure-openai client
-    azure_client = AzureOpenAI(
-        api_version=args.openai_azure["api_version"],
-        azure_endpoint=args.openai_azure["azure_endpoint"],
-        api_key=args.openai_azure["api_key"],
-    )
-
-    # query collection for relevant content
-    result = qdrant.search(
-        collection_name=collection_name,
-        query_vector=azure_client.embeddings.create(
-            input=["What is the concave mirror?"],
-            model=args.openai_azure["embedding_engine"],
+    try:
+        # set up azure-openai client
+        azure_client = AzureOpenAI(
+            api_version=args.openai_azure["api_version"],
+            azure_endpoint=args.openai_azure["azure_endpoint"],
+            api_key=args.openai_azure["api_key"],
         )
-            .data[0]
-            .embedding,
-        limit=5,
-    )
 
-    # format prompt
-    context = []
-    for one_res in result:
-        context.append(one_res.payload['text'])
+        # query collection for relevant content
+        result = qdrant.search(
+            collection_name=collection_name,
+            query_vector=azure_client.embeddings.create(
+                input=["What is the concave mirror?"],
+                model=args.openai_azure["embedding_engine"],
+            )
+                .data[0]
+                .embedding,
+            limit=5,
+        )
 
-    context = ",".join(str(element) for element in context)
+        # format prompt
+        context = []
+        for one_res in result:
+            context.append(one_res.payload['text'])
 
-    prompt = f"Use the following pieces of context to answer the question " \
-             f"enclosed within 3 backticks at the end. If you do not know the " \
-             f"answer, just say that you do not know given the provided resources, " \
-             f"do not try to make up an " \
-             f"answer. Please provide an answer which is factually correct and " \
-             f"based on the information retrieved from the vector store. Please " \
-             f"also mention any quotes supporting the answer if any present in " \
-             f"the context supplied within two double quotes. {context} " \
-             f"QUESTION:```{question}``` ANSWER: "
+        context = ",".join(str(element) for element in context)
 
-    # query OpenAI model
-    response = azure_client.chat.completions.create(
-        model="gpt-4-turbo",
-        messages=[
-            {
-                "role": "assistant",
-                "content": prompt,
-            },
-        ],
-        temperature=0
-    )
+        prompt = f"Use the following pieces of context to answer the question " \
+                 f"enclosed within 3 backticks at the end. If you do not know the " \
+                 f"answer, just say that you do not know given the provided resources, " \
+                 f"do not try to make up an " \
+                 f"answer. Please provide an answer which is factually correct and " \
+                 f"based on the information retrieved from the vector store. Please " \
+                 f"also mention any quotes supporting the answer if any present in " \
+                 f"the context supplied within two double quotes. {context} " \
+                 f"QUESTION:```{question}``` ANSWER: "
 
-    return response.choices[0].message.content
+        # query OpenAI model
+        response = azure_client.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=[
+                {
+                    "role": "assistant",
+                    "content": prompt,
+                },
+            ],
+            temperature=0
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        print(f"The following error occurred while querying the model:"
+              f" {e}")
+        return "An error occurred. Please check your credentials."

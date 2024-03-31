@@ -94,6 +94,7 @@ def main():
 
     for one_doc in filepaths:
 
+        filename = one_doc.replace(args.filepaths['pdfs_folder'], '')
         try:
             # read file and generate embeddings
             raw_text = get_pdf_text(filepaths)
@@ -102,8 +103,6 @@ def main():
             embeddings = generate_embeddings(text_chunks,
                                              args.openai_azure['embedding_engine'],
                                              azure_client)
-
-            filename = one_doc.replace(args.filepaths['pdfs_folder'], '')
 
             # transform embeddings to qdrant points and store them
             points = [
