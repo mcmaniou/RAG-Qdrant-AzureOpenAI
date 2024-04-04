@@ -41,8 +41,7 @@ def answer_question(question) -> str:
         qdrant = QdrantClient(host=args.qdrant["host"], port=args.qdrant["port"])
         collection_name = args.qdrant["collection_name"]
     except Exception as e:
-        print(f"The following error occurred while connecting to the DB:"
-              f" {e}")
+        print(f"The following error occurred while connecting to the DB:" f" {e}")
         return "No DB available to retrieve information from."
 
     try:
@@ -57,46 +56,47 @@ def answer_question(question) -> str:
         result = qdrant.search(
             collection_name=collection_name,
             query_vector=azure_client.embeddings.create(
-                input=["What is the concave mirror?"],
+                input=[question],
                 model=args.openai_azure["embedding_engine"],
             )
-                .data[0]
-                .embedding,
+            .data[0]
+            .embedding,
             limit=5,
         )
 
         # format prompt
         context = []
         for one_res in result:
-            context.append(one_res.payload['text'])
+            context.append(one_res.payload["text"])
 
         context = ",".join(str(element) for element in context)
 
-        prompt = f"Use the following pieces of context to answer the question " \
-                 f"enclosed within 3 backticks at the end. If you do not know the " \
-                 f"answer, just say that you do not know given the provided resources, " \
-                 f"do not try to make up an " \
-                 f"answer. Please provide an answer which is factually correct and " \
-                 f"based on the information retrieved from the vector store. Please " \
-                 f"also mention any quotes supporting the answer if any present in " \
-                 f"the context supplied within two double quotes. {context} " \
-                 f"QUESTION:```{question}``` ANSWER: "
+        prompt = (
+            f"Use the following pieces of context to answer the question "
+            f"enclosed within 3 backticks at the end. If you do not know the "
+            f"answer, just say that you do not know given the provided resources, "
+            f"do not try to make up an "
+            f"answer. Please provide an answer which is factually correct and "
+            f"based on the information retrieved from the vector store. Please "
+            f"also mention any quotes supporting the answer if any present in "
+            f"the context supplied within two double quotes. {context} "
+            f"QUESTION:```{question}``` ANSWER: "
+        )
 
         # query OpenAI model
         response = azure_client.chat.completions.create(
-            model="gpt-4-turbo",
+            model=args.openai_azure['model_engine'],
             messages=[
                 {
                     "role": "assistant",
                     "content": prompt,
                 },
             ],
-            temperature=0
+            temperature=0,
         )
 
         return response.choices[0].message.content
 
     except Exception as e:
-        print(f"The following error occurred while querying the model:"
-              f" {e}")
+        print(f"The following error occurred while querying the model:" f" {e}")
         return "An error occurred. Please check your credentials."
