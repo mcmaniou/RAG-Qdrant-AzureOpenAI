@@ -9,7 +9,7 @@ The project is written in Python version 3.10. To install the requirements pleas
 pip install -r requirements.txt
 ```
 
-### 2. Start database
+### 2. Start the database
 The project uses a Qdrant DB to store the embeddings. The DB is set up in a docker container and port 6334 is open to access it. The `docker-compose.yml` is provided. To start the DB run in your terminal:
 ```
 docker-compose up -d
